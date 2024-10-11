@@ -12,8 +12,10 @@ import org.hibernate.validator.constraints.Length;
 @AllArgsConstructor
 @Getter
 public class Member {
+
+    @Length(min = 1, max = 20)
     @Id
-    private Long id;
+    private String id;
 
     @NotNull
     @Length(min = 1, max = 255)
@@ -35,4 +37,5 @@ public class Member {
     @Length(max = 20)
     @Setter
     private Status status;
+
 }
