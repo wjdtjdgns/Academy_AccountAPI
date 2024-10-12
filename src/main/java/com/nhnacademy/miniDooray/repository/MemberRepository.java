@@ -6,6 +6,5 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MemberRepository extends JpaRepository<Member, String> {
-    Page<Member> findAllBy(Pageable pageable);
     boolean existsByIdAndPassword(String id, String password);
 }
