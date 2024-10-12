@@ -1,6 +1,6 @@
 package com.nhnacademy.miniDooray.controller;
 
-import com.nhnacademy.miniDooray.dto.MemberDto;
+import com.nhnacademy.miniDooray.dto.*;
 import com.nhnacademy.miniDooray.exception.IllegalIdOrPasswordException;
 import com.nhnacademy.miniDooray.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping("/member")
 @RequiredArgsConstructor
@@ -28,8 +30,8 @@ public class MemberController {
             @ApiResponse(responseCode = "409", description = "Member ID already exists")
     })
     @PostMapping("/register")
-    public ResponseEntity<MemberDto> registerMember(@Validated @RequestBody MemberDto memberDto) {
-        MemberDto registerDto = memberService.registerMember(memberDto);
+    public ResponseEntity<MemberDto> registerMember(@Validated @RequestBody RegisterRequest registerRequest) {
+        MemberDto registerDto = memberService.registerMember(registerRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(registerDto);
     }
 
@@ -37,6 +39,7 @@ public class MemberController {
     @Operation(summary = "Get a member by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Member found"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden to this member's data"),
             @ApiResponse(responseCode = "404", description = "Member not found")
     })
     @GetMapping("/{memberId}")
@@ -64,15 +67,15 @@ public class MemberController {
             @ApiResponse(responseCode = "404", description = "Member not found")
     })
     @PutMapping("/{memberId}")
-    public ResponseEntity<MemberDto> updateMember(@PathVariable String memberId, @Validated @RequestBody MemberDto memberDto) {
-        MemberDto updateMember = memberService.updateMember(memberId, memberDto);
+    public ResponseEntity<MemberDto> updateMember(@PathVariable String memberId, @Validated @RequestBody UpdateRequest updateRequest) {
+        MemberDto updateMember = memberService.updateMember(memberId, updateRequest);
         return ResponseEntity.ok(updateMember);
     }
 
 
     @Operation(summary = "Delete a member")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Member deleted"),
+            @ApiResponse(responseCode = "204", description = "Member status updated to WITHDRAWN"),
             @ApiResponse(responseCode = "404", description = "Member not found")
     })
     @DeleteMapping("/{memberId}")
@@ -88,13 +91,25 @@ public class MemberController {
             @ApiResponse(responseCode = "401", description = "Invalid member ID or password")
     })
     @PostMapping("/login")
-    public ResponseEntity<Void> doLogin(@RequestParam String memberId, @RequestParam String password) {
+    public ResponseEntity<Void> doLogin(@RequestBody @Validated LoginRequest loginRequest) {
 
-        if (!memberService.matches(memberId, password)) {
+        if (!memberService.matches(loginRequest.getId(), loginRequest.getPassword())) {
             throw new IllegalIdOrPasswordException("Id 나 Password가 일치하지 않습니다.");
         }
 
         return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(summary = "Lookup members by their IDs")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Members found"),
+            @ApiResponse(responseCode = "400", description = "Invalid member IDs")
+    })
+    @PostMapping("/lookup")
+    public ResponseEntity<List<MemberInfoDto>> lookupMembers(@RequestBody MemberRequest memberRequest){
+        List<MemberInfoDto> memberInfoList = memberService.lookupMembers(memberRequest.getMemberIds());
+        return ResponseEntity.ok(memberInfoList);
     }
 
 }
