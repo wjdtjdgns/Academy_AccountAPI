@@ -1,7 +1,6 @@
 package com.nhnacademy.miniDooray.service.impl;
 
 import com.nhnacademy.miniDooray.dto.MemberDto;
-import com.nhnacademy.miniDooray.encryption.SHA256PasswordEncoder;
 import com.nhnacademy.miniDooray.entity.Member;
 import com.nhnacademy.miniDooray.exception.IdAlreadyExistsException;
 import com.nhnacademy.miniDooray.exception.IdNotFoundException;
@@ -29,11 +28,9 @@ public class MemberServiceImpl implements MemberService {
             throw new IdAlreadyExistsException("Member id가 이미 존재합니다. " + memberDto.getId());
         }
 
-        String hashedPassword = SHA256PasswordEncoder.encode(memberDto.getPassword());
-
         Member member = new Member(
                 memberDto.getId(),
-                hashedPassword,
+                memberDto.getPassword(),
                 memberDto.getEmail(),
                 memberDto.getName(),
                 memberDto.getStatus()
@@ -41,13 +38,7 @@ public class MemberServiceImpl implements MemberService {
 
         memberRepository.save(member);
 
-        return new MemberDto(
-                member.getId(),
-                null,
-                member.getEmail(),
-                member.getName(),
-                member.getStatus()
-        );
+        return convertToDto(member);
     }
 
     @Override
@@ -59,13 +50,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다."));
 
-        return new MemberDto(
-                member.getId(),
-                null,
-                member.getEmail(),
-                member.getName(),
-                member.getStatus()
-        );
+        return convertToDto(member);
     }
 
     @Override
@@ -92,13 +77,7 @@ public class MemberServiceImpl implements MemberService {
 
         memberRepository.save(member);
 
-        return new MemberDto(
-                member.getId(),
-                null,
-                member.getEmail(),
-                member.getName(),
-                member.getStatus()
-        );
+        return convertToDto(member);
     }
 
     @Override
@@ -123,7 +102,7 @@ public class MemberServiceImpl implements MemberService {
 
         return membersPage.map(member -> new MemberDto(
                 member.getId(),
-                null,
+                member.getPassword(),
                 member.getEmail(),
                 member.getName(),
                 member.getStatus()
@@ -137,6 +116,16 @@ public class MemberServiceImpl implements MemberService {
         }
 
         return memberRepository.existsByIdAndPassword(memberId, password);
+    }
+
+    private MemberDto convertToDto(Member member) {
+        return new MemberDto(
+                member.getId(),
+                member.getPassword(),
+                member.getEmail(),
+                member.getName(),
+                member.getStatus()
+        );
     }
 
 }
