@@ -1,6 +1,8 @@
 package com.nhnacademy.miniDooray.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -34,7 +36,7 @@ public class Member {
     private String name;
 
     @NotNull
-    @Length(max = 20)
+    @Enumerated(EnumType.STRING)
     @Setter
     private Status status;
 
