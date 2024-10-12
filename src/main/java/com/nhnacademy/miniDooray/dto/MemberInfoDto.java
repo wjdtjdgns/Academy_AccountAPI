@@ -1,17 +1,13 @@
 package com.nhnacademy.miniDooray.dto;
 
-import com.nhnacademy.miniDooray.entity.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class MemberDto {
+public class MemberInfoDto {
     private String id;
-    private String password;
-    private String email;
     private String name;
-    private Status status;
 }

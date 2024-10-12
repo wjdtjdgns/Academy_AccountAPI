@@ -1,9 +1,14 @@
 package com.nhnacademy.miniDooray.service.impl;
 
 import com.nhnacademy.miniDooray.dto.MemberDto;
+import com.nhnacademy.miniDooray.dto.MemberInfoDto;
+import com.nhnacademy.miniDooray.dto.RegisterRequest;
+import com.nhnacademy.miniDooray.dto.UpdateRequest;
 import com.nhnacademy.miniDooray.entity.Member;
+import com.nhnacademy.miniDooray.entity.Status;
 import com.nhnacademy.miniDooray.exception.IdAlreadyExistsException;
 import com.nhnacademy.miniDooray.exception.IdNotFoundException;
+import com.nhnacademy.miniDooray.exception.StatusIsWithdrawnException;
 import com.nhnacademy.miniDooray.repository.MemberRepository;
 import com.nhnacademy.miniDooray.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +17,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 public class MemberServiceImpl implements MemberService {
@@ -19,21 +27,21 @@ public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
 
     @Override
-    public MemberDto registerMember(MemberDto memberDto) {
-        if (memberDto == null) {
+    public MemberDto registerMember(RegisterRequest registerRequest) {
+        if (registerRequest == null) {
             throw new IllegalArgumentException();
         }
 
-        if (memberRepository.existsById(memberDto.getId())) {
-            throw new IdAlreadyExistsException("Member id가 이미 존재합니다. " + memberDto.getId());
+        if (memberRepository.existsById(registerRequest.getId())) {
+            throw new IdAlreadyExistsException("해당 ID가 이미 존재합니다. id: " + registerRequest.getId());
         }
 
         Member member = new Member(
-                memberDto.getId(),
-                memberDto.getPassword(),
-                memberDto.getEmail(),
-                memberDto.getName(),
-                memberDto.getStatus()
+                registerRequest.getId(),
+                registerRequest.getPassword(),
+                registerRequest.getEmail(),
+                registerRequest.getName(),
+                Status.REGISTERED
         );
 
         memberRepository.save(member);
@@ -50,11 +58,15 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다."));
 
+        if(member.getStatus() == Status.WITHDRAWN){
+            throw new StatusIsWithdrawnException("탈퇴한 회원입니다. id:" + memberId);
+        }
+
         return convertToDto(member);
     }
 
     @Override
-    public MemberDto updateMember(String memberId, MemberDto memberDto) {
+    public MemberDto updateMember(String memberId, UpdateRequest updateRequest) {
         if (memberId == null) {
             throw new IllegalArgumentException();
         }
@@ -62,17 +74,17 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다."));
 
-        if (memberDto.getPassword() != null) {
-            member.setPassword(memberDto.getPassword());
+        if (updateRequest.getPassword() != null) {
+            member.setPassword(updateRequest.getPassword());
         }
-        if (memberDto.getEmail() != null) {
-            member.setEmail(memberDto.getEmail());
+        if (updateRequest.getEmail() != null) {
+            member.setEmail(updateRequest.getEmail());
         }
-        if (memberDto.getName() != null) {
-            member.setName(memberDto.getName());
+        if (updateRequest.getName() != null) {
+            member.setName(updateRequest.getName());
         }
-        if (memberDto.getStatus() != null) {
-            member.setStatus(memberDto.getStatus());
+        if (updateRequest.getStatus() != null) {
+            member.setStatus(updateRequest.getStatus());
         }
 
         memberRepository.save(member);
@@ -89,7 +101,8 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다."));
 
-        memberRepository.delete(member);
+        member.setStatus(Status.WITHDRAWN);
+        memberRepository.save(member);
     }
 
     @Override
@@ -115,7 +128,30 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalArgumentException();
         }
 
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다."));
+
+        if(member.getStatus() == Status.WITHDRAWN){
+            throw new StatusIsWithdrawnException("탈퇴한 회원입니다. id:" + memberId);
+        }
+
         return memberRepository.existsByIdAndPassword(memberId, password);
+    }
+
+    public List<MemberInfoDto> lookupMembers(List<String> memberIds) {
+        if (memberIds == null || memberIds.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
+        List<MemberInfoDto> memberInfos = new ArrayList<>();
+
+        for (String memberId : memberIds) {
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new IdNotFoundException("해당 ID가 없습니다: "));
+            memberInfos.add(new MemberInfoDto(member.getId(), member.getName()));
+        }
+
+        return memberInfos;
     }
 
     private MemberDto convertToDto(Member member) {
