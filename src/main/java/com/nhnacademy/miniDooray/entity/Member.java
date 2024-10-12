@@ -36,7 +36,7 @@ public class Member {
     private String name;
 
     @NotNull
-    @Length(max = 20)
+    @Enumerated(EnumType.STRING)
     @Setter
     private Status status;
 
