@@ -41,12 +41,12 @@ class MemberControllerTest {
     private MemberService memberService;
 
     @Test
-    @DisplayName("POST - /member/register")
+    @DisplayName("POST - /members/register")
     void testRegisterMember() throws Exception {
         MemberDto memberDto = new MemberDto("testId", "testPassword", "test@Email.com", "testName", Status.REGISTERED);
         when(memberService.registerMember(any(RegisterRequest.class))).thenReturn(memberDto);
 
-        mockMvc.perform(post("/member/register")
+        mockMvc.perform(post("/members/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"testId\",\"password\":\"testPassword\",\"email\":\"test@Email.com\", \"name\": \"testName\",\"status\": \"REGISTERED\"}"))
                 .andExpect(status().isCreated())
@@ -59,21 +59,21 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("POST - /member/register 실패 - 중복된 ID")
+    @DisplayName("POST - /members/register 실패 - 중복된 ID")
     void testRegisterMember_Failure_DuplicateId() throws Exception {
         when(memberService.registerMember(any(RegisterRequest.class)))
                 .thenThrow(new IdAlreadyExistsException("해당 ID가 이미 존재합니다."));
 
-        mockMvc.perform(post("/member/register")
+        mockMvc.perform(post("/members/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"duplicateId\",\"password\":\"testPassword\",\"email\":\"test@Email.com\", \"name\": \"testName\",\"status\": \"REGISTERED\"}"))
                 .andExpect(status().isConflict());
     }
 
     @Test
-    @DisplayName("POST - /member/register 실패 - 유효성 검증 실패")
+    @DisplayName("POST - /members/register 실패 - 유효성 검증 실패")
     public void testRegisterMember_Failure_InvalidInput() throws Exception {
-        mockMvc.perform(post("/member/register")
+        mockMvc.perform(post("/members/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"\",\"password\":\"\",\"email\":\"invalid\",\"name\": \"\",\"status\": \"REGISTERED\"}"))
                 .andExpect(status().isBadRequest());
@@ -82,12 +82,12 @@ class MemberControllerTest {
 
 
     @Test
-    @DisplayName("GET - /member/{memberId}")
+    @DisplayName("GET - /members/{memberId}")
     void testGetMember() throws Exception {
         MemberDto memberDto = new MemberDto("testId", "testPassword", "test@Email.com", "testName", Status.DORMANT);
         when(memberService.getMember(anyString())).thenReturn(memberDto);
 
-        mockMvc.perform(get("/member/testId"))
+        mockMvc.perform(get("/members/testId"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("testId"))
                 .andExpect(jsonPath("$.password").value("testPassword"))
@@ -97,23 +97,23 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("GET - /member/{memberId} - Forbidden")
+    @DisplayName("GET - /members/{memberId} - Forbidden")
     void testGetMember_Forbidden() throws Exception {
         when(memberService.getMember(anyString())).thenThrow(new StatusIsWithdrawnException("탈퇴한 회원입니다."));
 
-        mockMvc.perform(get("/member/forbiddenId"))
+        mockMvc.perform(get("/members/forbiddenId"))
                 .andExpect(status().isForbidden());
     }
 
 
     @Test
-    @DisplayName("GET - /member")
+    @DisplayName("GET - /members")
     void testGetMembers() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
         Page<MemberDto> page = new PageImpl<>(Collections.singletonList(new MemberDto("testId", "testPassword","test@Email.com","testName",Status.WITHDRAWN)), pageable, 1);
         when(memberService.getMembers(any(Integer.class), any(Integer.class))).thenReturn(page);
 
-        mockMvc.perform(get("/member")
+        mockMvc.perform(get("/members")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -126,14 +126,14 @@ class MemberControllerTest {
 
 
     @Test
-    @DisplayName("PUT - /member/{memberId}")
+    @DisplayName("PUT - /members/{memberId}")
     void testUpdateMember() throws Exception {
         UpdateRequest updateRequest = new UpdateRequest("updatedPassword", "updated@Email.com", "updatedName", Status.DORMANT);
         MemberDto updatedMemberDto = new MemberDto("updatedId", "updatedPassword", "updated@Email.com", "updatedName", Status.DORMANT);
 
         when(memberService.updateMember(anyString(), any(UpdateRequest.class))).thenReturn(updatedMemberDto);
 
-        mockMvc.perform(put("/member/updatedId")
+        mockMvc.perform(put("/members/updatedId")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"updatedPassword\",\"email\":\"updated@Email.com\",\"name\":\"updatedName\",\"status\":\"DORMANT\"}"))
                 .andExpect(status().isOk())
@@ -147,44 +147,44 @@ class MemberControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE - /member/{memberId}")
+    @DisplayName("DELETE - /members/{memberId}")
     void testDeleteMember() throws Exception {
         doNothing().when(memberService).deleteMember(anyString());
 
-        mockMvc.perform(delete("/member/testId"))
+        mockMvc.perform(delete("/members/testId"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("POST - /member/login")
+    @DisplayName("POST - /members/login")
     void testDoLogin_Success() throws Exception {
         when(memberService.matches(anyString(), anyString())).thenReturn(true);
 
-        mockMvc.perform(post("/member/login")
+        mockMvc.perform(post("/members/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"testId\",\"password\":\"testPassword\"}"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("POST - /member/login 실패 - ID나 Password 불일치")
+    @DisplayName("POST - /members/login 실패 - ID나 Password 불일치")
     void testDoLogin_Failure() throws Exception {
         when(memberService.matches(anyString(), anyString())).thenReturn(false);
 
-        mockMvc.perform(post("/member/login")
+        mockMvc.perform(post("/members/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"id\":\"wrongId\",\"password\":\"wrongPassword\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("POST - /member/lookup")
+    @DisplayName("POST - /members/lookup")
     void testLookupMembers() throws Exception {
         List<MemberInfoDto> memberInfoList = List.of(new MemberInfoDto("testId", "testName"));
 
         when(memberService.lookupMembers(any())).thenReturn(memberInfoList);
 
-        mockMvc.perform(post("/member/lookup")
+        mockMvc.perform(post("/members/lookup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memberIds\":[\"testId\"]}"))
                 .andExpect(status().isOk())
